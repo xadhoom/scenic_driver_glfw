@@ -22,6 +22,7 @@ defmodule Scenic.Driver.Glfw do
 
   @default_title "Driver Glfw"
   @default_resizeable false
+  @default_fullscreen false
 
   @default_block_size 512
 
@@ -63,6 +64,12 @@ defmodule Scenic.Driver.Glfw do
         true -> @default_resizeable
       end
 
+    fullscreen =
+      cond do
+        is_boolean(config[:fullscreen]) -> config[:fullscreen]
+        true -> @default_fullscreen
+      end
+
     sync_interval =
       cond do
         is_integer(config[:sync]) -> config[:sync]
@@ -76,7 +83,9 @@ defmodule Scenic.Driver.Glfw do
       end
 
     port_args =
-      to_charlist(" #{width} #{height} #{inspect(title)} #{resizeable} #{dl_block_size}")
+      to_charlist(
+        " #{width} #{height} #{inspect(title)} #{resizeable} #{dl_block_size} #{fullscreen}"
+      )
 
     # request put and delete notifications from the cache
     Cache.request_notification(:cache_put)

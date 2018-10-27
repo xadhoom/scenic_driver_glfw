@@ -188,7 +188,7 @@ void window_close_callback( GLFWwindow* window )
 
 //---------------------------------------------------------
 // done before the window is created
-void set_window_hints( const char* resizable ) {
+void set_window_hints( const char* resizable, const int fullscreen ) {
   if ( strncmp(resizable,"true",4) != 0 ) {
     // don't let the user resize the window
     glfwWindowHint(GLFW_RESIZABLE, false);
@@ -197,6 +197,12 @@ void set_window_hints( const char* resizable ) {
   // GLFW_DECORATED flags all window decoration such as the close
   // widget, border, move bar, etc
   // glfwWindowHint(GLFW_DECORATED, false);
+
+  if (fullscreen) {
+    // disable decorations, should be ignored
+    // but at least on linux seems not
+    glfwWindowHint(GLFW_DECORATED, GL_FALSE);
+  }
 
   // claim the focus right on creation
   glfwWindowHint(GLFW_FOCUSED, true);
@@ -333,7 +339,7 @@ int main(int argc, char **argv) {
   test_endian();
 
   // super simple arg check
-  if ( argc != 6 ) {
+  if ( argc != 7 ) {
     printf("\r\nscenic_driver_glfw should be launched via the Scenic.Driver.Glfw library.\r\n\r\n");
     return 0;
   }
@@ -347,6 +353,11 @@ int main(int argc, char **argv) {
   // becoming obsolete
   int dl_block_size = atoi(argv[5]);
 
+  // argv[6] is the full screen flag
+  int fullscreen = 0;
+  if ( strncmp(argv[6],"true",4) == 0 ) {
+    fullscreen = 1;
+  };
 
   // send_puts( "in glfw");
 
@@ -356,11 +367,21 @@ int main(int argc, char **argv) {
 
   // set the glfw window hints - done before window creation
   // argv[4] is the resizable flag
-  set_window_hints( argv[4] );
+  set_window_hints( argv[4], fullscreen );
 
   /* Create a windowed mode window and its OpenGL context */
   // argv[3] is the window title
-  window = glfwCreateWindow(width, height, argv[3], NULL, NULL);
+  if (fullscreen) {
+    GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+    glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+    glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
+    glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
+    glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+    window = glfwCreateWindow(mode->width, mode->height, argv[3], monitor, NULL);
+  } else {
+    window = glfwCreateWindow(width, height, argv[3], NULL, NULL);
+  }
   if (!window)
   {
       glfwTerminate();
